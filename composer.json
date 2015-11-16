@@ -1,0 +1,15 @@
+{
+    "name": "DD/DiMaria",
+    "description": "A minimalist Dependency injection container (DIC) for PHP.",
+    "require": {
+        "php": "~7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    },
+    "autoload": {
+    	"psr-4": {
+            "DD\\": "src"
+        }
+    }
+}
