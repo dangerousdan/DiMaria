@@ -1,5 +1,5 @@
 {
-    "name": "DD/DiMaria",
+    "name": "dd/dimaria",
     "description": "A minimalist Dependency injection container (DIC) for PHP.",
     "require": {
         "php": "~7.0"
