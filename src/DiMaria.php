@@ -1,22 +1,24 @@
 <?php
 namespace DD;
 
+/**
+ * Dependency injector
+ */
 class DiMaria
 {
     protected $aliases = [];
     protected $cache = [];
+    protected $injections = [];
     protected $params = [];
-    protected $rules;
     protected $shared = [];
     protected $sharedInstance = [];
 
     /**
-     * Set multiple di rules at once.
-     * Rules are applied in the following format:
-     * [
-     *  'aliases' => ['aliasName' => ['instance', ['optional key/value array of params']]],
-     *  'params' => ['instance' => ['key/value array of params']],
-     *  'shared' => ['instance' => 'isShared']
+     * Set multiple di rules at once. Rules are applied in the following format:
+     * [  'aliases' => ['aliasName' => ['instance', ['optional key/value array of params']]],
+     *    'params' => ['instance' => ['key/value array of params']],
+     *    'shared' => ['instance' => 'isShared'],
+     *    'injections' => ['instance' => [['method', ['key/value array of params']]]
      * ]
      *
      * @param array $rules a multi-dimensional array of rules to set
@@ -24,19 +26,26 @@ class DiMaria
      */
     public function setRules(array $rules): self
     {
-        if ($rules['aliases']) {
+        if (isset($rules['aliases'])) {
             foreach ($rules['aliases'] as $alias => $aliasConfig) {
                 $this->setAlias($alias, ...$aliasConfig);
             }
         }
-        if ($rules['params']) {
+        if (isset($rules['params'])) {
             foreach ($rules['params'] as $instance => $params) {
                 $this->setParams($instance, $params);
             }
         }
-        if ($rules['shared']) {
+        if (isset($rules['shared'])) {
             foreach ($rules['shared'] as $instance => $isShared) {
                 $this->setShared($instance, $isShared);
+            }
+        }
+        if (isset($rules['injections'])) {
+            foreach ($rules['injections'] as $instance => $config) {
+                foreach ($config as $params) {
+                    $this->setInjection($instance, ...$params);
+                }
             }
         }
         return $this;
@@ -59,6 +68,25 @@ class DiMaria
     }
 
     /**
+     * Call a method after constructing a class
+     * @param string $className the name of the class
+     * @param string $method    the name of the method
+     * @param array  $params    a key/value array of parameter names and values
+     * @return self
+     */
+    public function setInjection(string $className, string $method, array $params = []): self
+    {
+        if (! isset($this->injections[$className])) {
+            $this->injections[$className] = [];
+        }
+        if (! isset($this->injections[$className][$method])) {
+            $this->injections[$className][$method] = [];
+        }
+        $this->injections[$className][$method][] = $params;
+        return $this;
+    }
+
+    /**
      * Set parameters of a class
      * @param string $className the name of the class
      * @param array  $params    a key/value array of parameter names and values
@@ -72,17 +100,12 @@ class DiMaria
 
     /**
      * Mark a class/alias as shared
-     * @param string  $className the name of class/alias
-     * @param boolean $isShared  turn shared instances of this class on or off (default: true)
+     * @param string $className the name of class/alias
      * @return self
      */
-    public function setShared(string $className, bool $isShared = true): self
+    public function setShared(string $className): self
     {
-        if ($isShared) {
-            $this->shared[$className] = true;
-            return $this;
-        }
-        unset($this->shared[$className]);
+        $this->shared[$className] = true;
         return $this;
     }
 
@@ -94,17 +117,17 @@ class DiMaria
      */
     public function get(string $className, array $params = [])
     {
-        if ($this->isShared($className) && isset($this->sharedInstance[$className])) {
+        if (isset($this->shared[$className]) && isset($this->sharedInstance[$className])) {
             return $this->sharedInstance[$className];
         }
         $originalClassName = $className;
-        while ($alias = $this->getAlias($className)) {
+        while ($alias = $this->aliases[$className] ?? false) {
             $params = $params + $alias['params'];
             $className = $alias['className'];
         }
         $callback = $this->cache[$originalClassName] ?? $this->getCallback($className, $originalClassName);
         $object = $callback($params);
-        if ($this->isShared($originalClassName)) {
+        if (isset($this->shared[$originalClassName])) {
             $this->sharedInstance[$originalClassName] = $object;
         }
         return $object;
@@ -113,6 +136,19 @@ class DiMaria
     protected function getCallback(string $className, string $originalClassName): callable
     {
         $callback = $this->generateCallback($className);
+        if (isset($this->injections[$originalClassName])) {
+            foreach ($this->injections[$originalClassName] as $method => $instance) {
+                $methodInfo = $this->getMethodInfo(new \ReflectionMethod($className, $method));
+                foreach ($instance as $methodParameters) {
+                    $methodParams = $this->getParameters($methodInfo, $methodParameters);
+                    $callback = function ($params) use ($callback, $method, $methodParams) {
+                        $object = $callback($params);
+                        $object->$method(...$methodParams);
+                        return $object;
+                    };
+                };
+            }
+        }
         $this->cache[$originalClassName] = $callback;
         return $callback;
     }
@@ -122,25 +158,23 @@ class DiMaria
         $constructor = (new \ReflectionClass($className))->getConstructor();
 
         if (! $constructor || ! $constructor->getNumberOfParameters()) {
-            return function($params) use ($className) {
+            return function ($params) use ($className) {
                 return new $className;
             };
         }
-        $constructorInfo = $this->getConstructorInfo($constructor);
-        $predefinedParams = $this->getParams($className);
-
-        return function($params) use ($className, $constructorInfo, $predefinedParams) {
+        $constructorInfo = $this->getMethodInfo($constructor);
+        $predefinedParams = $this->params[$className] ?? [];
+        return function ($params) use ($className, $constructorInfo, $predefinedParams) {
             return new $className(...$this->getParameters($constructorInfo, $params + $predefinedParams));
         };
     }
 
-    protected function getConstructorInfo(\ReflectionMethod $method): array
+    protected function getMethodInfo(\ReflectionMethod $method): array
     {
         $paramInfo = [];
         foreach ($method->getParameters() as $param) {
             $paramType = $param->hasType() ? $param->getType() : null;
             $paramType = $paramType ? $paramType->isBuiltin() ? null : $paramType->__toString() : null;
-
             $paramInfo[$param->getName()] = [
                 'name' => $param->getName(),
                 'optional' => $param->isOptional(),
@@ -152,13 +186,16 @@ class DiMaria
         return $paramInfo;
     }
 
-    protected function getParameters(array $constructorInfo, array $params): array
+    protected function getParameters(array $methodInfo, array $params): array
     {
         $parameters = [];
-        foreach ($constructorInfo as $param) {
+        foreach ($methodInfo as $param) {
             if (isset($params[$param['name']])) {
                 array_push($parameters, ...$this->determineParameter($params[$param['name']], $param['variadic']));
             } elseif ($param['optional']) {
+                if ($param['variadic']) {
+                    break;
+                }
                 $parameters[] = $param['default'];
             } elseif ($param['type']) {
                 $parameters[] = $this->get($param['type']);
@@ -173,6 +210,7 @@ class DiMaria
     {
         if (is_array($param)) {
             if ($isVariadic) {
+                $params = [];
                 foreach ($param as $a) {
                     $params[] = isset($a['instanceOf']) ? $this->get($a['instanceOf']) : $a;
                 }
@@ -181,20 +219,5 @@ class DiMaria
             return isset($param['instanceOf']) ? [$this->get($param['instanceOf'])] : [$param];
         }
         return [$param];
-    }
-
-    protected function isShared(string $className): bool
-    {
-        return isset($this->shared[$className]);
-    }
-
-    protected function getAlias(string $className): array
-    {
-        return $this->aliases[$className] ?? [];
-    }
-
-    protected function getParams(string $className): array
-    {
-        return $this->params[$className] ?? [];
     }
 }

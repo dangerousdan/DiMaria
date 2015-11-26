@@ -1,7 +1,5 @@
 # DiMaria Dependency Injector
 
-![DiMaria](http://news.bbcimg.co.uk/media/images/75979000/jpg/_75979820_goalcelebs.jpg)
-
 DiMaria is a Dependency Injection Container for PHP 7 with no dependencies. It's written to be extremely fast and lightweight.
 
 ## Installation
@@ -107,7 +105,7 @@ $writeStorage = $di->get('DbStorageWithWritePermissions');
 ```
 
 #### Aliasception
-It is also possible to alias an alias. The 'outer' alias parameters will take precedence.
+It is also possible to alias an alias. Parameters will be merged together. The 'outer' alias parameters will take precedence.
 
 #### Handling Interfaces with Aliases
 Aliasing also allows you to set a preferred implementation of an interface.
@@ -194,6 +192,30 @@ $ballpool = $di->get('Ballpool', [
 ```
 *Note: Variadic functions cannot have a default value, but they are always optional. Therefore in the example above, if we didn't set the parameter 'balls', it will be given an empty array.*
 
+### Setter Injection
+Setters can be configured to automatically be called after creating an object.
+Setter injection rules are appended. This makes it possible to call the same setter multiple times.
+
+Injection rules are not inherited. So they only apply to the class or alias defined in the rule.
+```
+class Foo
+{
+    public function doSomething($bar = false)
+    {
+        ...
+    }
+}
+```
+
+```
+$di = new DD\DiMaria;
+
+$di->setInjection('Foo', 'doSomething');
+$di->setInjection('Foo', 'doSomething', ['bar' => true]);
+$foo = $di->get('Foo');
+
+```
+
 ### Setting Multiple Configuration Rules at Once.
 If there are lots of di rules you wish to apply, rules can be applied in a 'cleaner' way by calling `setRules()`.
 This allows us to set as many rules as we like, in one method call.
@@ -222,6 +244,12 @@ $di->setRules([
     'shared' => [
         'My\DbAdapter' => true,
         'My\DbAdapterServer2' => true
+    ],
+    'injections' => [
+        'Foo' => [
+            ['doSomething']
+            ['doSomething', ['bar' => true]],
+        ]
     ]
 ]);
 ```
@@ -239,3 +267,5 @@ If we can set all parameters on an object during creation then we should do so, 
 
 ### Speed
 This is considerably faster than [Zend/Di](https://github.com/zendframework/zend-di) (both runtime and compiled definitions) in tests.
+
+![DiMaria](http://news.bbcimg.co.uk/media/images/75979000/jpg/_75979820_goalcelebs.jpg)
