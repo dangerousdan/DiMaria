@@ -261,10 +261,6 @@ $di->setAlias(My\StorageInterface::class, My\Storage\DbStorage::class);```
 
 Depending on your IDE, this means that you should be able to see [PHPDoc](http://www.phpdoc.org/) information and/or use IDE functions to [jump to the class declaration](https://www.jetbrains.com/phpstorm/help/navigating-to-declaration-or-type-declaration-of-a-symbol.html).
 
-### Probably won't implement
-* Setter Injection
-If we can set all parameters on an object during creation then we should do so, otherwise we've made it possible to create an incomplete object. If parameters are optional, we should set default values for parameters.
-
 ### Speed
 This is considerably faster than [Zend/Di](https://github.com/zendframework/zend-di) (both runtime and compiled definitions) in tests.
 
