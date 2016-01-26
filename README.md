@@ -4,6 +4,8 @@
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/dangerousdan/DiMaria/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/dangerousdan/DiMaria/?branch=master)
 [![Code Coverage](https://scrutinizer-ci.com/g/dangerousdan/DiMaria/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/dangerousdan/DiMaria/?branch=master)
 [![Build Status](https://scrutinizer-ci.com/g/dangerousdan/DiMaria/badges/build.png?b=master)](https://scrutinizer-ci.com/g/dangerousdan/DiMaria/build-status/master)
+[![Code Climate](https://codeclimate.com/github/dangerousdan/DiMaria/badges/gpa.svg)](https://codeclimate.com/github/dangerousdan/DiMaria)
+[![SensioLabsInsight](https://insight.sensiolabs.com/projects/a0051470-aecd-45f2-ae62-04f1dd4d517e/mini.png)](https://insight.sensiolabs.com/projects/a0051470-aecd-45f2-ae62-04f1dd4d517e)
 
 DiMaria is a Dependency Injection Container for PHP 7 with no dependencies. It's written to be extremely fast and lightweight.
 

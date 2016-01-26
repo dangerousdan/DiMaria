@@ -1,12 +1,18 @@
 {
     "name": "dd/dimaria",
+    "type": "library",
     "description": "A minimalist Dependency injection container (DIC) for PHP",
+    "keywords": ["Dependency Injection", "Dependency Injection Container", "DI", "DIC"],
     "license": "BSD-2-Clause",
+    "authors": [{
+        "name": "Danny Walters",
+        "email": "dannywuk88@gmail.com"
+    }],
     "require": {
         "php": "~7.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "*"
+        "phpunit/phpunit": "^5.1"
     },
     "autoload": {
     	"psr-4": {
