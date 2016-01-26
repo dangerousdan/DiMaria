@@ -173,6 +173,7 @@ class Ballpool
     }
 }
 ```
+
 ```
 $di = new DD\DiMaria;
 
@@ -257,7 +258,8 @@ $di->setRules([
 ### Pro Tip
 Instead of writing config with strings, we can get the class name with `::class`.
 ```
-$di->setAlias(My\StorageInterface::class, My\Storage\DbStorage::class);```
+$di->setAlias(My\StorageInterface::class, My\Storage\DbStorage::class);
+```
 
 Depending on your IDE, this means that you should be able to see [PHPDoc](http://www.phpdoc.org/) information and/or use IDE functions to [jump to the class declaration](https://www.jetbrains.com/phpstorm/help/navigating-to-declaration-or-type-declaration-of-a-symbol.html).
 
