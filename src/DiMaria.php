@@ -17,7 +17,7 @@ class DiMaria
      * Set multiple di rules at once. Rules are applied in the following format:
      * [  'aliases' => ['aliasName' => ['instance', ['optional key/value array of params']]],
      *    'params' => ['instance' => ['key/value array of params']],
-     *    'shared' => ['instance' => 'isShared'],
+     *    'shared' => ['instance' => true],
      *    'injections' => ['instance' => [['method', ['key/value array of params']]]
      * ]
      *
@@ -38,7 +38,9 @@ class DiMaria
         }
         if (isset($rules['shared'])) {
             foreach ($rules['shared'] as $instance => $isShared) {
-                $this->setShared($instance, $isShared);
+                if ($isShared) {
+                    $this->setShared($instance);
+                }
             }
         }
         if (isset($rules['injections'])) {
@@ -158,7 +160,7 @@ class DiMaria
         $constructor = (new \ReflectionClass($className))->getConstructor();
 
         if (! $constructor || ! $constructor->getNumberOfParameters()) {
-            return function ($params) use ($className) {
+            return function () use ($className) {
                 return new $className;
             };
         }
@@ -175,8 +177,8 @@ class DiMaria
         foreach ($method->getParameters() as $param) {
             $paramType = $param->hasType() ? $param->getType() : null;
             $paramType = $paramType ? $paramType->isBuiltin() ? null : $paramType->__toString() : null;
-            $paramInfo[$param->getName()] = [
-                'name' => $param->getName(),
+            $paramInfo[$param->name] = [
+                'name' => $param->name,
                 'optional' => $param->isOptional(),
                 'default' => $param->isOptional() ? ($param->isVariadic() ? null : $param->getDefaultValue()) : null,
                 'variadic' => $param->isVariadic(),
