@@ -13,14 +13,14 @@ DiMaria is a Dependency Injection Container for PHP 7 with no dependencies. It's
 Fetch DiMaria via composer.
 
 ## Usage
-DiMaria should work out of the box.
+DiMaria should work out of the box. Just call `get()` with the class name you wish to create.
 ```
 $di = new DD\DiMaria;
 $object = $di->get('ClassName');
 ```
 
 ### Automatic injection of Type Hinted Classes
-If a class parameter is type-hinted to a class, this class will automatically be fetched.
+If constructor parameters are type-hinted to classes, DiMaria will automatically fetch these dependencies and pass them to the constructor, resolving all dependencies down the chain.
 ```
 class Foo
 {
@@ -37,7 +37,7 @@ $object = $di->get('Foo');
 ```
 
 ### Setting Parameters
-Parameters can be set in by defining them with `setParams()`
+Rules for parameter values can be set with `setParams()`. Any parameters without rules will fall back to the default value if set. `setParams()` takes two arguments: the class name, and an array of parameter names and their corresponding values.
 ```
 class Credentials
 {
@@ -56,10 +56,9 @@ $di->setParams('DbStorage', [
 ]);
 $object = $di->get('Credentials');
 ```
-*Note that parameters with default values will be used if they are not set.*
 
 ### Overriding Parameters
-Parameters can also be set during object creation. These will override any existing parameters.
+Parameters can also be set during object creation. These will override any existing parameters. This is done by passing an array of parameter names and their corresponding values as a second argument, similar to how we set rules in `setParams`. In the example below, `$object` will be created with the values 'writeAccess', 'abcd' and 'localhost'.
 ```
 $di = new DD\DiMaria;
 $di->setParams('DbStorage', [
@@ -67,13 +66,12 @@ $di->setParams('DbStorage', [
     'password' => 'abcd'
 ]);
 $object = $di->get('DbStorage', [
-    'server'   => 'writeAccess',
-    'password' => '1234'
+    'username' => 'writeAccess'
 ]);
 ```
 
 ### Defining Classes in config
-To pass an instance of a class as a parameter, we need to set the parameter to `['instanceOf' => 'className']`.
+To pass an instance of a class as a parameter (or override a class if it is typehinted), we need to set the parameter to `['instanceOf' => 'className']`.
 Otherwise DiMaria will attempt to pass the string `className` as its parameter.
 ```
 class Repository
@@ -113,6 +111,7 @@ $writeStorage = $di->get('DbStorageWithWritePermissions');
 
 #### Aliasception
 It is also possible to alias an alias. Parameters will be merged together. The 'outer' alias parameters will take precedence.
+Any rules passed to `get()` during object creation still have the last say.
 
 #### Handling Interfaces with Aliases
 Aliasing also allows you to set a preferred implementation of an interface.
@@ -131,11 +130,11 @@ $di = new DD\DiMaria;
 $di->setAlias('StorageInterface', 'DbStorage');
 $repository = $di->get('Repository');
 ```
-A preferred implementation of an interface can then easily be overridden like this:
+A preferred implementation of an interface can then easily be overridden for particular classes like this:
 
 ```
 $di->setParams('Repository', [
-    'storage' => ['instanceOf' => 'DbStorage'],
+    'storage' => ['instanceOf' => 'AnotherStorage'],
 ]);
 ```
 
@@ -202,7 +201,7 @@ $ballpool = $di->get('Ballpool', [
 
 ### Setter Injection
 Setters can be configured to automatically be called after creating an object.
-Setter injection rules are appended. This makes it possible to call the same setter multiple times.
+Setter injection rules are appended instead of overwritten. This makes it possible to call the same setter multiple times.
 
 Injection rules are not inherited. So they only apply to the class or alias defined in the rule.
 ```
