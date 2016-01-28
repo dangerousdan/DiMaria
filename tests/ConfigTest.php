@@ -65,4 +65,18 @@ class ConfigTest extends AbstractTest
         $logger = $this->di->get('SetterInjectionTestClasses\Logger');
         $this->assertEquals($loggers, $logger->loggers);
     }
+
+    public function testPreferencesCanBeSetInConfig()
+    {
+        $this->di->setRules([
+            'preferences' => [
+                RoomInterface::class => Kitchen::class
+            ]
+        ]);
+
+        $this->di->setPreference(RoomInterface::class, Kitchen::class);
+
+        $house = $this->di->get(House::class);
+        $this->assertEquals(Kitchen::class, get_class($house->kitchen));
+    }
 }

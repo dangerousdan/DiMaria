@@ -2,10 +2,11 @@
 namespace DD;
 
 /**
- * Dependency injector
+ * DiMaria Dependency injector
  */
 class DiMaria
 {
+    protected $preferences = [];
     protected $aliases = [];
     protected $cache = [];
     protected $injections = [];
@@ -14,47 +15,54 @@ class DiMaria
     protected $sharedInstance = [];
 
     /**
-     * Set multiple di rules at once. Rules are applied in the following format:
-     * [  'aliases' => ['aliasName' => ['instance', ['optional key/value array of params']]],
-     *    'params' => ['instance' => ['key/value array of params']],
-     *    'shared' => ['instance' => true],
-     *    'injections' => ['instance' => [['method', ['key/value array of params']]]
-     * ]
-     *
+     * Set multiple di rules at once.
      * @param array $rules a multi-dimensional array of rules to set
      * @return self
      */
     public function setRules(array $rules): self
     {
-        if (isset($rules['aliases'])) {
-            foreach ($rules['aliases'] as $alias => $aliasConfig) {
-                $this->setAlias($alias, ...$aliasConfig);
-            }
+        $rules['preferences'] = $rules['preferences'] ?? [];
+        $rules['aliases'] = $rules['aliases'] ?? [];
+        $rules['params'] = $rules['params'] ?? [];
+        $rules['shared'] = $rules['shared'] ?? [];
+        $rules['injections'] = $rules['injections'] ?? [];
+
+        foreach ($rules['preferences'] as $interface => $class) {
+            $this->setPreference($interface, $class);
         }
-        if (isset($rules['params'])) {
-            foreach ($rules['params'] as $instance => $params) {
-                $this->setParams($instance, $params);
-            }
+        foreach ($rules['aliases'] as $alias => $aliasConfig) {
+            $this->setAlias($alias, ...$aliasConfig);
+        };
+        foreach ($rules['params'] as $instance => $params) {
+            $this->setParams($instance, $params);
         }
-        if (isset($rules['shared'])) {
-            foreach ($rules['shared'] as $instance => $isShared) {
-                if ($isShared) {
-                    $this->setShared($instance);
-                }
+        foreach ($rules['shared'] as $instance => $isShared) {
+            if ($isShared) {
+                $this->setShared($instance);
             }
-        }
-        if (isset($rules['injections'])) {
-            foreach ($rules['injections'] as $instance => $config) {
-                foreach ($config as $params) {
-                    $this->setInjection($instance, ...$params);
-                }
+        };
+        foreach ($rules['injections'] as $instance => $config) {
+            foreach ($config as $params) {
+                $this->setInjection($instance, ...$params);
             }
         }
         return $this;
     }
 
     /**
-     * Alias a class/interface/alias to another.
+     * Set a preferred implementation of a class/interface
+     * @param string $alias     the name of the alias
+     * @param string $className the name of the class/interface
+     * @return self
+     */
+    public function setPreference(string $alias, string $className): self
+    {
+        $this->preferences[$alias] = $className;
+        return $this;
+    }
+
+    /**
+     * Alias a class/interface/alias to a string.
      * @param string $alias     the name of the alias
      * @param string $className the name of the class
      * @param array  $params    a key/value array of parameter names and values
@@ -70,7 +78,7 @@ class DiMaria
     }
 
     /**
-     * Call a method after constructing a class
+     * Set rule to call a method after constructing a class
      * @param string $className the name of the class
      * @param string $method    the name of the method
      * @param array  $params    a key/value array of parameter names and values
@@ -78,12 +86,6 @@ class DiMaria
      */
     public function setInjection(string $className, string $method, array $params = []): self
     {
-        if (! isset($this->injections[$className])) {
-            $this->injections[$className] = [];
-        }
-        if (! isset($this->injections[$className][$method])) {
-            $this->injections[$className][$method] = [];
-        }
         $this->injections[$className][$method][] = $params;
         return $this;
     }
@@ -122,6 +124,9 @@ class DiMaria
         if (isset($this->shared[$className]) && isset($this->sharedInstance[$className])) {
             return $this->sharedInstance[$className];
         }
+        while ($preference = $this->preferences[$className] ?? false) {
+            $className = $preference;
+        }
         $originalClassName = $className;
         while ($alias = $this->aliases[$className] ?? false) {
             $params = $params + $alias['params'];
@@ -158,7 +163,6 @@ class DiMaria
     protected function generateCallback(string $className): callable
     {
         $constructor = (new \ReflectionClass($className))->getConstructor();
-
         if (! $constructor || ! $constructor->getNumberOfParameters()) {
             return function () use ($className) {
                 return new $className;

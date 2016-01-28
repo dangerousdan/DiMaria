@@ -40,10 +40,17 @@ class LivingRoom implements RoomInterface
 class Kitchen implements RoomInterface
 {
     public $sink;
+    public $toaster;
 
-    public function __construct(Sink $sink)
+    public function __construct(Sink $sink, $toaster = true)
     {
         $this->sink = $sink;
+        $this->toaster = $toaster;
+    }
+
+    public function setToaster($toaster)
+    {
+        $this->toaster = $toaster;
     }
 }
 
