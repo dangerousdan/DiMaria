@@ -10,7 +10,10 @@
 DiMaria is a Dependency Injection Container for PHP 7 with no dependencies. It's written to be extremely fast and lightweight.
 
 ## Installation
-Fetch DiMaria via composer.
+Fetch DiMaria via composer. Add it with
+```
+composer require dangerousdan/dimaria
+```
 
 ## Usage
 DiMaria should work out of the box. Just call `get()` with the class name you wish to create.
