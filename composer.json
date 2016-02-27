@@ -6,8 +6,8 @@
     "keywords": ["Dependency Injection", "Dependency Injection Container", "DI", "DIC"],
     "license": "BSD-2-Clause",
     "authors": [{
-        "name": "Danny Walters",
-        "email": "dannywuk88@gmail.com"
+        "name": "Dangerous Dan",
+        "email": "danny@dangerweb.net"
     }],
     "require": {
         "php": "~7.0"
