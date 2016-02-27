@@ -113,8 +113,8 @@ $writeStorage = $di->get('DbStorageWithWritePermissions');
 It is also possible to alias an alias. Parameters will be merged together. The 'outer' alias parameters will take precedence.
 Any rules passed to `get()` during object creation still have the last say.
 
-#### Handling Interfaces with Aliases
-Aliasing also allows you to set a preferred implementation of an interface.
+### Preferences
+Use `setPreference()` to set a preferred implementation of an interface or class.
 ```
 class Repository
 {
@@ -127,10 +127,10 @@ class Repository
 
 ```
 $di = new DD\DiMaria;
-$di->setAlias('StorageInterface', 'DbStorage');
+$di->setPreference('StorageInterface', 'DbStorage');
 $repository = $di->get('Repository');
 ```
-A preferred implementation of an interface can then easily be overridden for particular classes like this:
+A preference can then easily be overridden for particular classes like this:
 
 ```
 $di->setParams('Repository', [

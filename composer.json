@@ -1,7 +1,8 @@
 {
     "name": "dd/dimaria",
     "type": "library",
-    "description": "A minimalist Dependency injection container (DIC) for PHP",
+    "description": "A super fast Dependency Injection Container for PHP 7",
+    "homepage": "https://github.com/dangerousdan/dimaria",
     "keywords": ["Dependency Injection", "Dependency Injection Container", "DI", "DIC"],
     "license": "BSD-2-Clause",
     "authors": [{
@@ -12,7 +13,7 @@
         "php": "~7.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^5.1"
+        "phpunit/phpunit": "^5.2"
     },
     "autoload": {
     	"psr-4": {
