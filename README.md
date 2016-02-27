@@ -235,8 +235,6 @@ $di = new DD\DiMaria;
 
 $di->setRules([
     'aliases' => [
-        'My\Service1\StorageInterface' => ['My\Service1\Storage\Db'],
-        'My\Service2\StorageInterface' => ['My\Service2\Storage\Db'],
         'My\DbAdapterServer2' => [
             'My\DbAdapter', [
                 'username' => 'abcd',
@@ -250,6 +248,9 @@ $di->setRules([
             'username' => 'abcd',
             'password' => '5678',
         ]
+    ],
+    'preferences' => [
+        'My\Service\StorageInterface' => 'My\Service\Storage\Db'
     ],
     'shared' => [
         'My\DbAdapter' => true,
