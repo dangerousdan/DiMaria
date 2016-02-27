@@ -1,5 +1,5 @@
 {
-    "name": "dd/dimaria",
+    "name": "dangerousdan/dimaria",
     "type": "library",
     "description": "A super fast Dependency Injection Container for PHP 7",
     "homepage": "https://github.com/dangerousdan/dimaria",
