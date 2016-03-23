@@ -1,10 +1,13 @@
 <?php
 namespace DD;
 
+use DD\DiMaria\Exception;
+use DD\DiMaria\NotFoundException;
+
 /**
  * DiMaria Dependency injector
  */
-class DiMaria
+class DiMaria implements \Interop\Container\ContainerInterface
 {
     protected $preferences = [];
     protected $aliases = [];
@@ -15,63 +18,28 @@ class DiMaria
     protected $sharedInstance = [];
 
     /**
-     * Set multiple di rules at once.
-     * @param array $rules a multi-dimensional array of rules to set
-     * @return self
-     */
-    public function setRules(array $rules): self
-    {
-        $rules['preferences'] = $rules['preferences'] ?? [];
-        $rules['aliases'] = $rules['aliases'] ?? [];
-        $rules['params'] = $rules['params'] ?? [];
-        $rules['shared'] = $rules['shared'] ?? [];
-        $rules['injections'] = $rules['injections'] ?? [];
-
-        foreach ($rules['preferences'] as $interface => $class) {
-            $this->setPreference($interface, $class);
-        }
-        foreach ($rules['aliases'] as $alias => $aliasConfig) {
-            $this->setAlias($alias, ...$aliasConfig);
-        };
-        foreach ($rules['params'] as $instance => $params) {
-            $this->setParams($instance, $params);
-        }
-        foreach ($rules['shared'] as $instance => $isShared) {
-            if ($isShared) {
-                $this->setShared($instance);
-            }
-        };
-        foreach ($rules['injections'] as $instance => $config) {
-            foreach ($config as $params) {
-                $this->setInjection($instance, ...$params);
-            }
-        }
-        return $this;
-    }
-
-    /**
      * Set a preferred implementation of a class/interface
-     * @param string $alias     the name of the alias
-     * @param string $className the name of the class/interface
+     * @param string $alias  the name of the alias
+     * @param string $class  the name of the class/interface
      * @return self
      */
-    public function setPreference(string $alias, string $className): self
+    public function setPreference(string $alias, string $class): self
     {
-        $this->preferences[$alias] = $className;
+        $this->preferences[$alias] = $class;
         return $this;
     }
 
     /**
      * Alias a class/interface/alias to a string.
-     * @param string $alias     the name of the alias
-     * @param string $className the name of the class
-     * @param array  $params    a key/value array of parameter names and values
+     * @param string $alias   the name of the alias
+     * @param string $class   the name of the class
+     * @param array  $params  a key/value array of parameter names and values
      * @return self
      */
-    public function setAlias(string $alias, string $className, array $params = []): self
+    public function setAlias(string $alias, string $class, array $params = []): self
     {
         $this->aliases[$alias] = [
-            'className' => $className,
+            'class' => $class,
             'params' => $params
         ];
         return $this;
@@ -79,73 +47,88 @@ class DiMaria
 
     /**
      * Set rule to call a method after constructing a class
-     * @param string $className the name of the class
+     * @param string $class the name of the class
      * @param string $method    the name of the method
      * @param array  $params    a key/value array of parameter names and values
      * @return self
      */
-    public function setInjection(string $className, string $method, array $params = []): self
+    public function setInjection(string $class, string $method, array $params = []): self
     {
-        $this->injections[$className][$method][] = $params;
+        $this->injections[$class][$method][] = $params;
         return $this;
     }
 
     /**
      * Set parameters of a class
-     * @param string $className the name of the class
+     * @param string $class the name of the class
      * @param array  $params    a key/value array of parameter names and values
      * @return self
      */
-    public function setParams(string $className, array $params): self
+    public function setParams(string $class, array $params): self
     {
-        $this->params[$className] = $params + ($this->params[$className] ?? []);
+        $this->params[$class] = $params + ($this->params[$class] ?? []);
         return $this;
     }
 
     /**
      * Mark a class/alias as shared
-     * @param string $className the name of class/alias
+     * @param string $class the name of class/alias
      * @return self
      */
-    public function setShared(string $className): self
+    public function setShared(string $class): self
     {
-        $this->shared[$className] = true;
+        $this->shared[$class] = true;
         return $this;
+    }
+
+    public function has($class): bool
+    {
+        return class_exists($class) ?: isset($this->aliases[$class]);
     }
 
     /**
      * Get an instance of a class
-     * @param  string $className the name of class/alias to create
-     * @param  array $params     a key/value array of parameter names and values
-     * @return mixed             an instance of the class requested
+     * @param  string $class  the name of class/alias to create
+     * @param  array $params  a key/value array of parameter names and values
+     * @return mixed          an instance of the class requested
      */
-    public function get(string $className, array $params = [])
+    public function get($class, array $params = [])
     {
-        if (isset($this->shared[$className]) && isset($this->sharedInstance[$className])) {
-            return $this->sharedInstance[$className];
+        if (! $this->has($class)) {
+            throw new NotFoundException('Class or alias ' . $class . 'does not exist');
         }
-        while ($preference = $this->preferences[$className] ?? false) {
-            $className = $preference;
+
+        if (isset($this->shared[$class]) && isset($this->sharedInstance[$class])) {
+            return $this->sharedInstance[$class];
         }
-        $originalClassName = $className;
-        while ($alias = $this->aliases[$className] ?? false) {
+        while ($preference = $this->preferences[$class] ?? false) {
+            $class = $preference;
+        }
+        $originalClass = $class;
+        while ($alias = $this->aliases[$class] ?? false) {
             $params = $params + $alias['params'];
-            $className = $alias['className'];
+            $class = $alias['class'];
         }
-        $callback = $this->cache[$originalClassName] ?? $this->getCallback($className, $originalClassName);
-        $object = $callback($params);
-        if (isset($this->shared[$originalClassName])) {
-            $this->sharedInstance[$originalClassName] = $object;
+        try {
+            $callback = $this->cache[$originalClass] ?? $this->getCallback($class, $originalClass);
+            $object = $callback($params);
+        } catch (\Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
+        } catch (\Error $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
+        }
+        if (isset($this->shared[$originalClass])) {
+            $this->sharedInstance[$originalClass] = $object;
         }
         return $object;
     }
 
-    protected function getCallback(string $className, string $originalClassName): callable
+    protected function getCallback(string $class, string $originalClass): callable
     {
-        $callback = $this->generateCallback($className);
-        if (isset($this->injections[$originalClassName])) {
-            foreach ($this->injections[$originalClassName] as $method => $instance) {
-                $methodInfo = $this->getMethodInfo(new \ReflectionMethod($className, $method));
+        $callback = $this->generateCallback($class);
+        if (isset($this->injections[$originalClass])) {
+            foreach ($this->injections[$originalClass] as $method => $instance) {
+                $methodInfo = $this->getMethodInfo(new \ReflectionMethod($class, $method));
                 foreach ($instance as $methodParameters) {
                     $methodParams = $this->getParameters($methodInfo, $methodParameters);
                     $callback = function ($params) use ($callback, $method, $methodParams) {
@@ -156,22 +139,22 @@ class DiMaria
                 };
             }
         }
-        $this->cache[$originalClassName] = $callback;
+        $this->cache[$originalClass] = $callback;
         return $callback;
     }
 
-    protected function generateCallback(string $className): callable
+    protected function generateCallback(string $class): callable
     {
-        $constructor = (new \ReflectionClass($className))->getConstructor();
+        $constructor = (new \ReflectionClass($class))->getConstructor();
         if (! $constructor || ! $constructor->getNumberOfParameters()) {
-            return function () use ($className) {
-                return new $className;
+            return function () use ($class) {
+                return new $class;
             };
         }
         $constructorInfo = $this->getMethodInfo($constructor);
-        $predefinedParams = $this->params[$className] ?? [];
-        return function ($params) use ($className, $constructorInfo, $predefinedParams) {
-            return new $className(...$this->getParameters($constructorInfo, $params + $predefinedParams));
+        $predefinedParams = $this->params[$class] ?? [];
+        return function ($params) use ($class, $constructorInfo, $predefinedParams) {
+            return new $class(...$this->getParameters($constructorInfo, $params + $predefinedParams));
         };
     }
 
@@ -206,7 +189,7 @@ class DiMaria
             } elseif ($param['type']) {
                 $parameters[] = $this->get($param['type']);
             } else {
-                throw new \Exception('Required parameter $' . $param['name'] . ' is missing');
+                throw new Exception('Required parameter $' . $param['name'] . ' is missing');
             }
         }
         return $parameters;
@@ -217,12 +200,12 @@ class DiMaria
         if (is_array($param)) {
             if ($isVariadic) {
                 $params = [];
-                foreach ($param as $a) {
-                    $params[] = isset($a['instanceOf']) ? $this->get($a['instanceOf']) : $a;
+                foreach ($param as $val) {
+                    $params[] = isset($val['instanceOf']) ? $this->get($val['instanceOf'], $val['params'] ?? []) : $val;
                 }
                 return $params;
             }
-            return isset($param['instanceOf']) ? [$this->get($param['instanceOf'])] : [$param];
+            return isset($param['instanceOf']) ? [$this->get($param['instanceOf'], $param['params'] ?? [])] : [$param];
         }
         return [$param];
     }

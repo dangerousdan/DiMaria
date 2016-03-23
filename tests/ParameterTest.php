@@ -74,4 +74,14 @@ class ParameterTest extends AbstractTest
         $tv = $this->di->get(TV::class);
         $this->assertEquals(Sink::class, get_class($tv->inches));
     }
+
+    public function testParamsCanBePassedInline()
+    {
+        $room = $this->di->get(LivingRoom::class, [
+            'tv' => ['instanceOf' => TV::class],
+            'tvRemote' => ['instanceOf' => TVRemote::class, 'params' => ['batteries' => 'AA']]
+        ]);
+
+        $this->assertEquals('AA', $room->tvRemote->batteries);
+    }
 }
