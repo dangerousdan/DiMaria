@@ -1,5 +1,5 @@
 <?php
-namespace DD\DiMaria;
+namespace DD\DiMaria\Exception;
 
 use Interop\Container\Exception\NotFoundException;
 

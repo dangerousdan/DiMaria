@@ -1,14 +1,15 @@
 <?php
 namespace DD;
 
-use DD\DiMaria\Exception;
-use DD\DiMaria\NotFoundException;
+use DD\DiMaria\Exception\ContainerException;
+use DD\DiMaria\Exception\NotFoundException;
 
 /**
  * DiMaria Dependency injector
  */
 class DiMaria implements \Interop\Container\ContainerInterface
 {
+    protected $cacheItem;
     protected $preferences = [];
     protected $aliases = [];
     protected $cache = [];
@@ -83,7 +84,7 @@ class DiMaria implements \Interop\Container\ContainerInterface
 
     public function has($class): bool
     {
-        return class_exists($class) ?: isset($this->aliases[$class]);
+        return class_exists($class) ?: isset($this->aliases[$class]) ?: isset($this->preferences[$class]);
     }
 
     /**
@@ -94,12 +95,11 @@ class DiMaria implements \Interop\Container\ContainerInterface
      */
     public function get($class, array $params = [])
     {
-        if (! $this->has($class)) {
-            throw new NotFoundException('Class or alias ' . $class . 'does not exist');
-        }
-
         if (isset($this->shared[$class]) && isset($this->sharedInstance[$class])) {
             return $this->sharedInstance[$class];
+        }
+        if (! $this->has($class)) {
+            throw new NotFoundException('Class or alias ' . $class . 'does not exist');
         }
         while ($preference = $this->preferences[$class] ?? false) {
             $class = $preference;
@@ -110,12 +110,12 @@ class DiMaria implements \Interop\Container\ContainerInterface
             $class = $alias['class'];
         }
         try {
-            $callback = $this->cache[$originalClass] ?? $this->getCallback($class, $originalClass);
+            $callback = $this->cache[$originalClass] ?? $this->cache[$originalClass] = $this->getCallback($class, $originalClass);
             $object = $callback($params);
         } catch (\Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new ContainerException($e->getMessage(), $e->getCode(), $e);
         } catch (\Error $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new ContainerException($e->getMessage(), $e->getCode(), $e);
         }
         if (isset($this->shared[$originalClass])) {
             $this->sharedInstance[$originalClass] = $object;
@@ -139,7 +139,6 @@ class DiMaria implements \Interop\Container\ContainerInterface
                 };
             }
         }
-        $this->cache[$originalClass] = $callback;
         return $callback;
     }
 
@@ -153,6 +152,7 @@ class DiMaria implements \Interop\Container\ContainerInterface
         }
         $constructorInfo = $this->getMethodInfo($constructor);
         $predefinedParams = $this->params[$class] ?? [];
+
         return function ($params) use ($class, $constructorInfo, $predefinedParams) {
             return new $class(...$this->getParameters($constructorInfo, $params + $predefinedParams));
         };
@@ -175,7 +175,7 @@ class DiMaria implements \Interop\Container\ContainerInterface
         return $paramInfo;
     }
 
-    protected function getParameters(array $methodInfo, array $params): array
+    public function getParameters(array $methodInfo, array $params): array
     {
         $parameters = [];
         foreach ($methodInfo as $param) {
@@ -189,7 +189,7 @@ class DiMaria implements \Interop\Container\ContainerInterface
             } elseif ($param['type']) {
                 $parameters[] = $this->get($param['type']);
             } else {
-                throw new Exception('Required parameter $' . $param['name'] . ' is missing');
+                throw new ContainerException('Required parameter $' . $param['name'] . ' is missing');
             }
         }
         return $parameters;

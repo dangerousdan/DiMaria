@@ -560,16 +560,16 @@
         },
         {
             "name": "phpunit/phpunit-mock-objects",
-            "version": "3.1.1",
+            "version": "3.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit-mock-objects.git",
-                "reference": "b90749d8e066e14ffeb9be8d5515d7b0710822f7"
+                "reference": "7c34c9bdde4131b824086457a3145e27dba10ca1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit-mock-objects/zipball/b90749d8e066e14ffeb9be8d5515d7b0710822f7",
-                "reference": "b90749d8e066e14ffeb9be8d5515d7b0710822f7",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit-mock-objects/zipball/7c34c9bdde4131b824086457a3145e27dba10ca1",
+                "reference": "7c34c9bdde4131b824086457a3145e27dba10ca1",
                 "shasum": ""
             },
             "require": {
@@ -612,7 +612,7 @@
                 "mock",
                 "xunit"
             ],
-            "time": "2016-03-03 16:39:02"
+            "time": "2016-03-24 05:58:25"
         },
         {
             "name": "sebastian/code-unit-reverse-lookup",
