@@ -15,6 +15,7 @@ class DiMaria implements ContainerInterface
     protected $cache = [];
     protected $injections = [];
     protected $params = [];
+    protected $shared = [];
     protected $sharedInstance = [];
 
     /**
@@ -70,9 +71,26 @@ class DiMaria implements ContainerInterface
         return $this;
     }
 
+    /**
+     * Mark a class/alias as shared
+     * @param string $class the name of class/alias
+     * @return self
+     */
+    public function setShared(string $class): self
+    {
+        $this->shared[$class] = true;
+        return $this;
+    }
+
     public function has($class): bool
     {
         return class_exists($class) ?: isset($this->aliases[$class]) ?: isset($this->preferences[$class]);
+    }
+
+    public function set($key, $value): self
+    {
+        $this->sharedInstance[$key] = $value;
+        return $this;
     }
 
     /**
@@ -101,6 +119,9 @@ class DiMaria implements ContainerInterface
      */
     public function create(string $class, array $params = [])
     {
+        if (isset($this->shared[$class])) {
+            return $this->get($class, $params);
+        }
         return $this->getObject($this->getClassName($class), $params);
     }
 
@@ -210,11 +231,11 @@ class DiMaria implements ContainerInterface
             if ($isVariadic) {
                 $params = [];
                 foreach ($param as $val) {
-                    $params[] = isset($val['instanceOf']) ? $this->get($val['instanceOf'], $val['params'] ?? []) : $val;
+                    $params[] = isset($val['instanceOf']) ? $this->create($val['instanceOf'], $val['params'] ?? []) : $val;
                 }
                 return $params;
             }
-            return isset($param['instanceOf']) ? [$this->get($param['instanceOf'], $param['params'] ?? [])] : [$param];
+            return isset($param['instanceOf']) ? [$this->create($param['instanceOf'], $param['params'] ?? [])] : [$param];
         }
         return [$param];
     }
