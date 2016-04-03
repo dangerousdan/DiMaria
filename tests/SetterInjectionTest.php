@@ -27,7 +27,7 @@ class SetterInjectionTest extends AbstractTest
         $this->assertEquals($userId, $entity->userId);
     }
 
-    public function testSetterInjectionCanBeAppliedMultipleTimes()
+    public function testSetterInjectionCanBeAppliedMultipleTimesInTheCorrectOrder()
     {
         $loggers = ['foo', 'bar'];
         $this->di->setInjection(Test\Logger::class, 'addLogger', ['logger' => $loggers[0]]);

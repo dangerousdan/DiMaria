@@ -10,28 +10,16 @@ use Interop\Container\ContainerInterface;
  */
 class DiMaria implements ContainerInterface
 {
-    protected $preferences = [];
     protected $aliases = [];
     protected $cache = [];
     protected $injections = [];
     protected $params = [];
+    protected $preferences = [];
     protected $shared = [];
     protected $sharedInstance = [];
 
     /**
-     * Set a preferred implementation of a class/interface
-     * @param string $alias  the name of the alias
-     * @param string $class  the name of the class/interface
-     * @return self
-     */
-    public function setPreference(string $alias, string $class): self
-    {
-        $this->preferences[$alias] = $class;
-        return $this;
-    }
-
-    /**
-     * Alias a class/interface/alias to a string.
+     * Alias a class/interface/alias to a string
      * @param string $alias   the name of the alias
      * @param string $class   the name of the class
      * @param array  $params  a key/value array of parameter names and values
@@ -55,8 +43,7 @@ class DiMaria implements ContainerInterface
      */
     public function setInjection(string $class, string $method, array $params = []): self
     {
-        $this->injections[$class][$method] = $this->injections[$class][$method] ?? [];
-        array_unshift($this->injections[$class][$method], $params);
+        $this->injections[$class][$method][] =  $params;
         return $this;
     }
 
@@ -73,6 +60,18 @@ class DiMaria implements ContainerInterface
     }
 
     /**
+     * Set a preferred implementation of a class/interface
+     * @param string $alias  the name of the alias
+     * @param string $class  the name of the class/interface
+     * @return self
+     */
+    public function setPreference(string $alias, string $class): self
+    {
+        $this->preferences[$alias] = $class;
+        return $this;
+    }
+
+    /**
      * Mark a class/alias as shared
      * @param string $class the name of class/alias
      * @return self
@@ -84,8 +83,20 @@ class DiMaria implements ContainerInterface
     }
 
     /**
-     * Returns true if the DiMaria can return an entry for the given identifier. Returns false otherwise.
-     * @param string $id  identifier of the entry to look for.
+     * Set a value. Retrievable with the get method
+     * @param string $key
+     * @param mixed $value
+     * @return self
+     */
+    public function set(string $key, $value): self
+    {
+        $this->sharedInstance[$key] = $value;
+        return $this;
+    }
+
+    /**
+     * Returns true if DiMaria can return an entry for the given string. Returns false otherwise.
+     * @param string $id  identifier of the entry to look for
      * @return boolean
      */
     public function has($class): bool
@@ -97,21 +108,12 @@ class DiMaria implements ContainerInterface
     }
 
     /**
-     * Set a value. Retrievable with the get method
-     * @param string $key
-     * @param mixed $value
-     */
-    public function set(string $key, $value): self
-    {
-        $this->sharedInstance[$key] = $value;
-        return $this;
-    }
-
-    /**
      * Get an instance of a class
-     * @param  string $class  the name of class/alias to create
-     * @param  array $params  a key/value array of parameter names and values
-     * @return mixed          an instance of the class requested
+     * @param  string $class       the name of class/alias to create
+     * @param  array $params       a key/value array of parameter names and values
+     * @throws NotFoundException   when no entry was found
+     * @throws ContainerException  if class could not be constructed
+     * @return mixed               an instance of the class requested
      */
     public function get($class, array $params = [])
     {
@@ -127,9 +129,11 @@ class DiMaria implements ContainerInterface
 
     /**
      * Get a new instance of a class
-     * @param  string $class  the name of class/alias to create
-     * @param  array $params  a key/value array of parameter names and values
-     * @return mixed          an instance of the class requested
+     * @param  string $class       the name of class/alias to create
+     * @param  array $params       a key/value array of parameter names and values
+     * @throws NotFoundException   if no entry was found
+     * @throws ContainerException  if class could not be constructed
+     * @return mixed               an instance of the class requested
      */
     public function create(string $class, array $params = [])
     {

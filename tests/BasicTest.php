@@ -23,13 +23,13 @@ class BasicTest extends AbstractTest
 
     public function testCreateAnObjectWhenTheresNoRulesAndNonOptionalParamsThrowsAnException()
     {
-        $this->setExpectedException('\Exception', 'Required parameter $batteries is missing');
+        $this->setExpectedException('DD\DiMaria\Exception\ContainerException', 'Required parameter $batteries is missing');
         $tvRemote = $this->di->get(TVRemote::class);
     }
 
     public function testCreateAnObjectWhenTheresMissingRulesForNonOptionalParamsThrowsAnException()
     {
-        $this->setExpectedException('\Exception', 'Required parameter $batteries is missing');
+        $this->setExpectedException('DD\DiMaria\Exception\ContainerException', 'Required parameter $batteries is missing');
         $this->di->setParams(TVRemote::class, ['buttons' => 48]);
         $tvRemote = $this->di->get(TVRemote::class);
     }
