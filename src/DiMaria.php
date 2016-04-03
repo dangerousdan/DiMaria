@@ -55,7 +55,8 @@ class DiMaria implements ContainerInterface
      */
     public function setInjection(string $class, string $method, array $params = []): self
     {
-        $this->injections[$class][$method][] = $params;
+        $this->injections[$class][$method] = $this->injections[$class][$method] ?? [];
+        array_unshift($this->injections[$class][$method], $params);
         return $this;
     }
 
@@ -82,12 +83,25 @@ class DiMaria implements ContainerInterface
         return $this;
     }
 
+    /**
+     * Returns true if the DiMaria can return an entry for the given identifier. Returns false otherwise.
+     * @param string $id  identifier of the entry to look for.
+     * @return boolean
+     */
     public function has($class): bool
     {
-        return class_exists($class) ?: isset($this->aliases[$class]) ?: isset($this->preferences[$class]);
+        return isset($this->sharedInstance[$class]) ?:
+            class_exists($class) ?:
+            isset($this->aliases[$class]) ?:
+            isset($this->preferences[$class]);
     }
 
-    public function set($key, $value): self
+    /**
+     * Set a value. Retrievable with the get method
+     * @param string $key
+     * @param mixed $value
+     */
+    public function set(string $key, $value): self
     {
         $this->sharedInstance[$key] = $value;
         return $this;
@@ -217,7 +231,7 @@ class DiMaria implements ContainerInterface
                 }
                 $parameters[] = $param['default'];
             } elseif ($param['type']) {
-                $parameters[] = $this->get($param['type']);
+                $parameters[] = $this->create($param['type']);
             } else {
                 throw new ContainerException('Required parameter $' . $param['name'] . ' is missing');
             }
