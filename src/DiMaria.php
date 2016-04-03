@@ -1,7 +1,7 @@
 <?php
 namespace DD;
 
-use DD\DiMaria\Exception\ContainerException;
+use DD\DiMaria\Exception\DiMariaException;
 use DD\DiMaria\Exception\NotFoundException;
 use Interop\Container\ContainerInterface;
 
@@ -98,6 +98,21 @@ class DiMaria implements ContainerInterface
         if (isset($this->shared[$class]) && isset($this->sharedInstance[$class])) {
             return $this->sharedInstance[$class];
         }
+        $object = $this->newInstance($class, $params);
+        if (isset($this->shared[$originalClass])) {
+            $this->sharedInstance[$originalClass] = $object;
+        }
+        return $object;
+    }
+
+    /**
+     * Get a new instance of a class
+     * @param  string $class  the name of class/alias to create
+     * @param  array $params  a key/value array of parameter names and values
+     * @return mixed          an instance of the class requested
+     */
+    public function newInstance(string $class, array $params = [])
+    {
         if (! $this->has($class)) {
             throw new NotFoundException('Class or alias ' . $class . ' does not exist');
         }
@@ -111,16 +126,12 @@ class DiMaria implements ContainerInterface
         }
         try {
             $callback = $this->cache[$originalClass] ?? $this->cache[$originalClass] = $this->getCallback($class, $originalClass);
-            $object = $callback($params);
+            return $callback($params);
         } catch (\Exception $e) {
             throw new ContainerException($e->getMessage(), $e->getCode(), $e);
         } catch (\Error $e) {
             throw new ContainerException($e->getMessage(), $e->getCode(), $e);
         }
-        if (isset($this->shared[$originalClass])) {
-            $this->sharedInstance[$originalClass] = $object;
-        }
-        return $object;
     }
 
     protected function getCallback(string $class, string $originalClass): callable
