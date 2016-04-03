@@ -1,7 +1,7 @@
 <?php
 namespace DD;
 
-use DD\DiMaria\Exception\DiMariaException;
+use DD\DiMaria\Exception\ContainerException;
 use DD\DiMaria\Exception\NotFoundException;
 use Interop\Container\ContainerInterface;
 
@@ -15,7 +15,6 @@ class DiMaria implements ContainerInterface
     protected $cache = [];
     protected $injections = [];
     protected $params = [];
-    protected $shared = [];
     protected $sharedInstance = [];
 
     /**
@@ -71,17 +70,6 @@ class DiMaria implements ContainerInterface
         return $this;
     }
 
-    /**
-     * Mark a class/alias as shared
-     * @param string $class the name of class/alias
-     * @return self
-     */
-    public function setShared(string $class): self
-    {
-        $this->shared[$class] = true;
-        return $this;
-    }
-
     public function has($class): bool
     {
         return class_exists($class) ?: isset($this->aliases[$class]) ?: isset($this->preferences[$class]);
@@ -95,13 +83,13 @@ class DiMaria implements ContainerInterface
      */
     public function get($class, array $params = [])
     {
-        if (isset($this->shared[$class]) && isset($this->sharedInstance[$class])) {
+        if (isset($this->sharedInstance[$class])) {
             return $this->sharedInstance[$class];
         }
-        $object = $this->newInstance($class, $params);
-        if (isset($this->shared[$originalClass])) {
-            $this->sharedInstance[$originalClass] = $object;
-        }
+        $class = $this->getClassName($class);
+
+        $object = $this->getObject($class, $params);
+        $this->sharedInstance[$class] = $object;
         return $object;
     }
 
@@ -111,7 +99,12 @@ class DiMaria implements ContainerInterface
      * @param  array $params  a key/value array of parameter names and values
      * @return mixed          an instance of the class requested
      */
-    public function newInstance(string $class, array $params = [])
+    public function create(string $class, array $params = [])
+    {
+        return $this->getObject($this->getClassName($class), $params);
+    }
+
+    protected function getClassName(string $class): string
     {
         if (! $this->has($class)) {
             throw new NotFoundException('Class or alias ' . $class . ' does not exist');
@@ -119,6 +112,11 @@ class DiMaria implements ContainerInterface
         while ($preference = $this->preferences[$class] ?? false) {
             $class = $preference;
         }
+        return $class;
+    }
+
+    protected function getObject(string $class, array $params)
+    {
         $originalClass = $class;
         while ($alias = $this->aliases[$class] ?? false) {
             $params = $params + $alias['params'];
