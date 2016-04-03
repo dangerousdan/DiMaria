@@ -10,7 +10,7 @@
 DiMaria is a Dependency Injection Container for PHP 7 with no dependencies. It's written to be extremely fast and lightweight.
 
 ## Installation
-Fetch DiMaria via composer. Add it with
+Fetch DiMaria with composer via packagist. Add it with
 ```
 composer require dangerousdan/dimaria
 ```
@@ -21,6 +21,8 @@ DiMaria should work out of the box. Just call `get()` with the class name you wi
 $di = new DD\DiMaria;
 $object = $di->get('ClassName');
 ```
+
+DiMaria implements the [container-interop](https://github.com/container-interop/container-interop) interface.
 
 ### Automatic injection of Type Hinted Classes
 If constructor parameters are type-hinted to classes, DiMaria will automatically fetch these dependencies and pass them to the constructor, resolving all dependencies down the chain.
@@ -74,8 +76,8 @@ $object = $di->get('DbStorage', [
 ```
 
 ### Defining Classes in config
-To pass an instance of a class as a parameter (or override a class if it is typehinted), we need to set the parameter to `['instanceOf' => 'className']`.
-Otherwise DiMaria will attempt to pass the string `className` as its parameter.
+To pass an instance of a class as a parameter (or override a class if it is typehinted), we need to set the parameter to `['instanceOf' => 'className']`, otherwise DiMaria will attempt to pass the string `className` as its parameter.
+You can also optionally overwrite parameters by passing a `params` key in the array
 ```
 class Repository
 {
@@ -89,7 +91,15 @@ class Repository
 ```
 $di = new DD\DiMaria;
 $di->setParams('Repository', [
-    'storage' => ['instanceOf' => 'DbStorage'],
+    'storage' => [
+        'instanceOf' => 'DbStorage'
+    ],
+    'mapper' => [
+        'instanceOf' => 'Mapper',
+        'params' => [
+            'foo' => 'bar'
+        ]
+    ]
 ]);
 $object = $di->get('Repository');
 ```
@@ -224,45 +234,6 @@ $di->setInjection('Foo', 'doSomething');
 $di->setInjection('Foo', 'doSomething', ['bar' => true]);
 $foo = $di->get('Foo');
 
-```
-
-### Setting Multiple Configuration Rules at Once.
-If there are lots of di rules you wish to apply, rules can be applied in a 'cleaner' way by calling `setRules()`.
-This allows us to set as many rules as we like, in one method call.
-
-```
-$di = new DD\DiMaria;
-
-$di->setRules([
-    'aliases' => [
-        'My\DbAdapterServer2' => [
-            'My\DbAdapter', [
-                'username' => 'abcd',
-                'password' => '1234',
-                'server' => '1.2.3.4'
-            ]
-        ]
-    ],
-    'params' => [
-        'My\DbAdapter' => [
-            'username' => 'abcd',
-            'password' => '5678',
-        ]
-    ],
-    'preferences' => [
-        'My\Service\StorageInterface' => 'My\Service\Storage\Db'
-    ],
-    'shared' => [
-        'My\DbAdapter' => true,
-        'My\DbAdapterServer2' => true
-    ],
-    'injections' => [
-        'Foo' => [
-            ['doSomething']
-            ['doSomething', ['bar' => true]],
-        ]
-    ]
-]);
 ```
 
 ### Pro Tip

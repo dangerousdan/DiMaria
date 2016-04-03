@@ -3,13 +3,13 @@ namespace DD;
 
 use DD\DiMaria\Exception\ContainerException;
 use DD\DiMaria\Exception\NotFoundException;
+use Interop\Container\ContainerInterface;
 
 /**
  * DiMaria Dependency injector
  */
-class DiMaria implements \Interop\Container\ContainerInterface
+class DiMaria implements ContainerInterface
 {
-    protected $cacheItem;
     protected $preferences = [];
     protected $aliases = [];
     protected $cache = [];
@@ -99,7 +99,7 @@ class DiMaria implements \Interop\Container\ContainerInterface
             return $this->sharedInstance[$class];
         }
         if (! $this->has($class)) {
-            throw new NotFoundException('Class or alias ' . $class . 'does not exist');
+            throw new NotFoundException('Class or alias ' . $class . ' does not exist');
         }
         while ($preference = $this->preferences[$class] ?? false) {
             $class = $preference;
