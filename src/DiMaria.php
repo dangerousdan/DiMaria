@@ -176,7 +176,7 @@ class DiMaria implements ContainerInterface
                 $methodInfo = $this->getMethodInfo(new \ReflectionMethod($class, $method));
                 foreach ($instance as $methodParameters) {
                     $methodParams = $this->getParameters($methodInfo, $methodParameters);
-                    $callback = function($params) use ($callback, $method, $methodParams) {
+                    $callback = function ($params) use ($callback, $method, $methodParams) {
                         $object = $callback($params);
                         $object->$method(...$methodParams);
                         return $object;
@@ -198,7 +198,7 @@ class DiMaria implements ContainerInterface
         $constructorInfo = $this->getMethodInfo($constructor);
         $predefinedParams = $this->params[$class] ?? [];
 
-        return function($params) use ($class, $constructorInfo, $predefinedParams) {
+        return function ($params) use ($class, $constructorInfo, $predefinedParams) {
             return new $class(...$this->getParameters($constructorInfo, $params + $predefinedParams));
         };
     }
