@@ -43,7 +43,7 @@ class DiMaria implements ContainerInterface
      */
     public function setInjection(string $class, string $method, array $params = []): self
     {
-        $this->injections[$class][$method][] =  $params;
+        $this->injections[$class][$method][] = $params;
         return $this;
     }
 
@@ -96,15 +96,12 @@ class DiMaria implements ContainerInterface
 
     /**
      * Returns true if DiMaria can return an entry for the given string. Returns false otherwise.
-     * @param string $id  identifier of the entry to look for
+     * @param string $class  identifier of the entry to look for
      * @return boolean
      */
     public function has($class): bool
     {
-        return isset($this->sharedInstance[$class]) ?:
-            class_exists($class) ?:
-            isset($this->aliases[$class]) ?:
-            isset($this->preferences[$class]);
+        return isset($this->sharedInstance[$class]) ?: class_exists($class) ?: isset($this->aliases[$class]) ?: isset($this->preferences[$class]);
     }
 
     /**
@@ -145,7 +142,7 @@ class DiMaria implements ContainerInterface
 
     protected function getClassName(string $class): string
     {
-        if (! $this->has($class)) {
+        if (!$this->has($class)) {
             throw new NotFoundException('Class or alias ' . $class . ' does not exist');
         }
         while ($preference = $this->preferences[$class] ?? false) {
@@ -179,7 +176,7 @@ class DiMaria implements ContainerInterface
                 $methodInfo = $this->getMethodInfo(new \ReflectionMethod($class, $method));
                 foreach ($instance as $methodParameters) {
                     $methodParams = $this->getParameters($methodInfo, $methodParameters);
-                    $callback = function ($params) use ($callback, $method, $methodParams) {
+                    $callback = function($params) use ($callback, $method, $methodParams) {
                         $object = $callback($params);
                         $object->$method(...$methodParams);
                         return $object;
@@ -193,7 +190,7 @@ class DiMaria implements ContainerInterface
     protected function generateCallback(string $class): callable
     {
         $constructor = (new \ReflectionClass($class))->getConstructor();
-        if (! $constructor || ! $constructor->getNumberOfParameters()) {
+        if (!$constructor || !$constructor->getNumberOfParameters()) {
             return function () use ($class) {
                 return new $class;
             };
@@ -201,7 +198,7 @@ class DiMaria implements ContainerInterface
         $constructorInfo = $this->getMethodInfo($constructor);
         $predefinedParams = $this->params[$class] ?? [];
 
-        return function ($params) use ($class, $constructorInfo, $predefinedParams) {
+        return function($params) use ($class, $constructorInfo, $predefinedParams) {
             return new $class(...$this->getParameters($constructorInfo, $params + $predefinedParams));
         };
     }
