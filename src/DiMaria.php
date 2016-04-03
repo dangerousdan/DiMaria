@@ -18,6 +18,11 @@ class DiMaria implements ContainerInterface
     protected $shared = [];
     protected $sharedInstance = [];
 
+    public function __construct()
+    {
+        $this->sharedInstance[__CLASS__] = $this;
+    }
+
     /**
      * Alias a class/interface/alias to a string
      * @param string $alias   the name of the alias

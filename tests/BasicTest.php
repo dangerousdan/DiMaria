@@ -33,4 +33,10 @@ class BasicTest extends AbstractTest
         $this->di->setParams(TVRemote::class, ['buttons' => 48]);
         $tvRemote = $this->di->get(TVRemote::class);
     }
+
+    public function testDiMariaCanGetItself()
+    {
+        $di = $this->di->get('DD\DiMaria');
+        $this->assertEquals($this->di, $di);
+    }
 }
