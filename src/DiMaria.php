@@ -225,7 +225,7 @@ class DiMaria implements ContainerInterface
         return $paramInfo;
     }
 
-    public function getParameters(array $methodInfo, array $params): array
+    protected function getParameters(array $methodInfo, array $params): array
     {
         $parameters = [];
         foreach ($methodInfo as $param) {
