@@ -43,4 +43,14 @@ class SharedTest extends AbstractTest
         $this->assertNotEquals($tvLarge, $tvSmall);
         $this->assertNotEquals($tvLarge, $tv);
     }
+
+    public function testAnAliasOfASharedInstanceIsNotShared()
+    {
+        $this->di->setShared(TV::class);
+        $this->di->setAlias('LargeTV', TV::class, ['inches' => 55]);
+        $tv1 = $this->di->create('LargeTV');
+        $tv2 = $this->di->create('LargeTV');
+        $tv1->inches = 40;
+        $this->assertNotEquals($tv1, $tv2);
+    }
 }

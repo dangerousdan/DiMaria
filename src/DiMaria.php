@@ -11,7 +11,7 @@ use Interop\Container\ContainerInterface;
 class DiMaria implements ContainerInterface
 {
     protected $aliases = [];
-    protected $cache = [];
+    protected $factory = [];
     protected $injections = [];
     protected $params = [];
     protected $preferences = [];
@@ -25,9 +25,9 @@ class DiMaria implements ContainerInterface
 
     /**
      * Alias a class/interface/alias to a string
-     * @param string $alias   the name of the alias
-     * @param string $class   the name of the class
-     * @param array  $params  a key/value array of parameter names and values
+     * @param  string $alias   the name of the alias
+     * @param  string $class   the name of the class
+     * @param  array  $params  a key/value array of parameter names and values
      * @return self
      */
     public function setAlias(string $alias, string $class, array $params = []): self
@@ -41,9 +41,9 @@ class DiMaria implements ContainerInterface
 
     /**
      * Set rule to call a method after constructing a class
-     * @param string $class the name of the class
-     * @param string $method    the name of the method
-     * @param array  $params    a key/value array of parameter names and values
+     * @param  string $class   the name of the class
+     * @param  string $method  the name of the method
+     * @param  array  $params  a key/value array of parameter names and values
      * @return self
      */
     public function setInjection(string $class, string $method, array $params = []): self
@@ -54,8 +54,8 @@ class DiMaria implements ContainerInterface
 
     /**
      * Set parameters of a class
-     * @param string $class the name of the class
-     * @param array  $params    a key/value array of parameter names and values
+     * @param  string $class   the name of the class
+     * @param  array  $params  a key/value array of parameter names and values
      * @return self
      */
     public function setParams(string $class, array $params): self
@@ -66,8 +66,8 @@ class DiMaria implements ContainerInterface
 
     /**
      * Set a preferred implementation of a class/interface
-     * @param string $alias  the name of the alias
-     * @param string $class  the name of the class/interface
+     * @param  string $alias  the name of the alias
+     * @param  string $class  the name of the class/interface
      * @return self
      */
     public function setPreference(string $alias, string $class): self
@@ -77,20 +77,21 @@ class DiMaria implements ContainerInterface
     }
 
     /**
-     * Mark a class/alias as shared
-     * @param string $class the name of class/alias
+     * Set an instance to always return a shared or new instance, regardless of method used
+     * @param  string $class     the name of class/alias
+     * @param  bool   $isShared  true will always return a shared instance. false will always return a new instance
      * @return self
      */
-    public function setShared(string $class): self
+    public function setShared(string $class, bool $isShared = true): self
     {
-        $this->shared[$class] = true;
+        $this->shared[$class] = $isShared;
         return $this;
     }
 
     /**
      * Set a value. Retrievable with the get method
-     * @param string $key
-     * @param mixed $value
+     * @param  string $key    a name to retrieve the value by
+     * @param  mixed  $value  the content to store against the key
      * @return self
      */
     public function set(string $key, $value): self
@@ -100,13 +101,25 @@ class DiMaria implements ContainerInterface
     }
 
     /**
+     * Set a factory. Retrievable with the create method. The get method will fetch but also cache the response
+     * @param  string   $key      a name to retrieve the content by
+     * @param  callable $factory  a callable to be invoked when fetched
+     * @return self
+     */
+    public function setFactory(string $key, callable $factory): self
+    {
+        $this->factory[$key] = $factory;
+        return $this;
+    }
+
+    /**
      * Returns true if DiMaria can return an entry for the given string. Returns false otherwise.
-     * @param string $class  identifier of the entry to look for
+     * @param  string $class  identifier of the entry to look for
      * @return boolean
      */
     public function has($class): bool
     {
-        return isset($this->sharedInstance[$class]) ?: class_exists($class) ?: isset($this->aliases[$class]) ?: isset($this->preferences[$class]);
+        return class_exists($class) ?: isset($this->aliases[$class]) ?: isset($this->preferences[$class]) ?: isset($this->sharedInstance[$class]) ?: isset($this->factory[$class]);
     }
 
     /**
@@ -119,6 +132,9 @@ class DiMaria implements ContainerInterface
      */
     public function get($class, array $params = [])
     {
+        if (isset($this->shared[$class]) && !$this->shared[$class]) {
+            return $this->create($class, $params);
+        }
         if (isset($this->sharedInstance[$class])) {
             return $this->sharedInstance[$class];
         }
@@ -139,7 +155,7 @@ class DiMaria implements ContainerInterface
      */
     public function create(string $class, array $params = [])
     {
-        if (isset($this->shared[$class])) {
+        if (isset($this->shared[$class]) && $this->shared[$class]) {
             return $this->get($class, $params);
         }
         return $this->getObject($this->getClassName($class), $params);
@@ -164,7 +180,7 @@ class DiMaria implements ContainerInterface
             $class = $alias['class'];
         }
         try {
-            $callback = $this->cache[$originalClass] ?? $this->cache[$originalClass] = $this->getCallback($class, $originalClass);
+            $callback = $this->factory[$originalClass] ?? $this->factory[$originalClass] = $this->getCallback($class, $originalClass);
             return $callback($params);
         } catch (\Exception $e) {
             throw new ContainerException($e->getMessage(), $e->getCode(), $e);
