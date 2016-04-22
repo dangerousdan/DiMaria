@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DiMaria Dependency Injector</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.4.1/themes/prism.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="index.min.css">
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.4.1/prism.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.4.1/components/prism-php.min.js"></script>
+    <script type="text/javascript" src="index.min.js"></script>
+  </head>
+  <body data-spy="scroll" data-target="#sidebar" data-offset="40">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header"><a class="navbar-brand">DiMaria Dependency Injector</a></div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="//github.com/dangerousdan/dimaria" target="_blank">View On Github</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <div class="container-fluid">
+      <div class="row"></div>
+      <div class="row">
+        <nav id="sidebar" class="col-sm-3 col-md-2 sidebar">
+          <ul class="nav nav-stacked">
+            <li class="active"><a href="#intro">Introduction</a></li>
+            <li><a href="#installation">Installation</a></li>
+            <li><a href="#usage">Usage</a>
+              <ul class="nav nav-stacked">
+                <li><a href="#default-behaviour">Default Behaviour</a></li>
+                <li><a href="#configuring-classes">Configuring Classes</a></li>
+                <li><a href="#aliasing">Aliasing</a></li>
+                <li><a href="#preferences">Preferences</a></li>
+                <li><a href="#shared-instances">Shared Instances</a></li>
+                <li><a href="#variadics">Variadics</a></li>
+                <li><a href="#setter-injection">Setter Injection</a></li>
+                <li><a href="#custom-values">Custom Values</a></li>
+              </ul>
+            </li>
+            <li><a href="#methods">Methods</a>
+              <ul class="nav nav-stacked">
+                <li><a href="#get">get</a></li>
+                <li><a href="#create">create</a></li>
+                <li><a href="#has">has</a></li>
+                <li><a href="#setParams">setParams</a></li>
+                <li><a href="#setAlias">setAlias</a></li>
+                <li><a href="#setPreference">setPreference</a></li>
+                <li><a href="#setShared">setShared</a></li>
+                <li><a href="#setInjection">setInjection</a></li>
+                <li><a href="#set">set</a></li>
+                <li><a href="#setFactory">setFactory</a></li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+        <div id="content" class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2">
+          <h1 id="intro">Intro </h1>DiMaria is a Dependency Injection Container for PHP 7 with no dependencies. It's written to be extremely fast and lightweight.
+          <h1 id="installation">Installation</h1>Fetch DiMaria with composer via packagist. Add it with <kbd>composer require dangerousdan/dimaria</kbd>
+          <h1 id="usage">Usage </h1>DiMaria should work out of the box. Just call get() with the class name you wish to create.
+          <pre><code class="language-php">$di = new DD\DiMaria;
+$object = $di->get('ClassName');</code></pre>DiMaria implements the container-interop interface.
+          <h2 id="default-behaviour">Default Behaviour</h2>
+          <p>
+            Classes are fetched with either the get or create method.
+            The get method will fetch a class and also cache the response for later use.
+            This means that fetching the same class again will return the exact same instance.
+            
+            The create method will fetch a new instance of the class each time.
+            
+            If a class has type-hinted parameters on its constructor then these will automatically be fetched,
+            resolving all the dependencies down the chain.
+            This is done by internally calling the create method.
+          </p>
+          <h2 id="configuring-classes">Configuring Classes</h2>
+          <p>
+            If a constructor parameter is not type-hinted or optional, then you will need to tell
+            DiMaria which parameters to use. This is done with the setParams method.
+            setParams takes two arguments: the class name, and a key-value array of parameters.
+            
+            Only the parameters that you wish to set need to be entered. If a parameter is optional,
+            or type-hinted then it is okay to leave this blank.
+            
+          </p>
+          <pre><code class="language-php">$di = new DD\DiMaria;
+$di->setParams('DbStorage', [
+    'username' => 'readAccess',
+    'password' => 'abcd',
+    'server' => 'localhost'
+]);    
+</code></pre>
+          <p>
+            If you want to pass a class as a parameter then it is possible to do this using ['instanceOf' => 'ClassName'].
+            
+            It is also possible to set or override parameters during object creation. This is done by 
+            passing the key-value array of parameters to the get or create method.
+            
+          </p>
+          <pre><code class="language-php">$di = new DD\DiMaria;
+$di->setParams('Repository', [
+    'storage' => [
+        'instanceOf' => 'DbStorage'
+    ],
+    'mapper' => [
+        'instanceOf' => 'Mapper',
+        'params' => [
+            'foo' => 'bar'
+        ]
+    ]
+]);
+$object = $di->get('Repository');</code></pre>
+          <h2 id="aliasing">Aliasing</h2>
+          <p>
+            Aliases are set in the same was as setParams, except we also set the name of the alias.
+            Setting parameters on aliases is optional. Any parameters set will override any existing parameters set on that class.
+            
+            Aliases are useful if you require the same class to be used in two different ways.
+            Eg. A Database class that connects to two separate databases.
+            
+          </p>
+          <p>
+            It is also possible to alias an alias. Parameters are merged together. The 'outer' alias parameters will take precedence.
+            Any parameters which are set when calling get or create will override any alias config
+            
+          </p>
+          <pre><code class="language-php">$di = new DD\DiMaria;
+$di->setParams('DbStorage', [
+    'username' => 'readAccess',
+    'password' => 'abcd',
+    'server' => 'localhost'
+]);
+$di->setAlias('DbStorageWithWritePermissions', 'DbStorage', [
+    'username' => 'writeAccess',
+    'password' => '1234'
+]);
+
+$readStorage = $di->get('DbStorage');
+$writeStorage = $di->get('DbStorageWithWritePermissions');</code></pre>
+          <h2 id="preferences">Preferences </h2>
+          <p>
+            Setting preferences allows us to set a preferred implementation of an instance or class.
+            Any class parameter that requires that instance or class will then be given the preferred implementation of it.
+            
+            SetPreference can easily be overridden be explicitly defining which class to pass to a parameter. 
+            
+          </p>
+          <pre><code class="language-php">$di = new DD\DiMaria;
+$di->setPreference('StorageInterface', 'DbStorage');
+$repository = $di->get('Repository');</code></pre>
+          <h2 id="shared-instances">Shared Instances </h2>
+          <p>
+            By default, get will return a shared instance, and create will not.
+            This behaviour can be overridden with setShared('classOrAlias', bool)
+            
+            Internally, class dependencies are fetched with 'create', so marking a class as shared is useful if a class
+            dependency should be a shared instance.
+            
+            Also, marking a class as not shared will overwrite the default get behaviour and return a new instance
+            each time. This is useful for interoperability.
+            
+          </p>
+          <pre><code class="language-php">$di = new DD\DiMaria;
+
+$di->setShared('ClassName');
+$object1 = $di->create('ClassName');
+$object2 = $di->create('ClassName');
+
+$di->setShared('ClassName', false);
+$object3 = $di->get('ClassName');
+$object4 = $di->get('ClassName');
+</code></pre>
+          <p>
+            In this example, $object1 and $object2 are the same instance, even though the create method is used.
+            $object3 and $object4 are different instances.
+          </p>
+          <h2 id="variadics">Variadics </h2>
+          <p>
+            Setting variadic parameters is similar to how we set normal parameters, except we pass a multidimensional array.
+            
+            Variadic parameters will work with aliases and shared instances.
+            
+            Variadic functions cannot have a default value, but they are always optional. 
+            If no value is set, a variadic parameter will be given an empty array.
+            
+          </p>
+          <pre><code class="language-php">$di = new DD\DiMaria;
+$di->setAlias('RedBall', 'Ball', ['colour' => 'red']);
+$di->setParams('Ballpool', [
+    'height' => 20,
+    'balls' => [
+        ['instanceOf' => 'Ball'],
+        ['instanceOf' => 'Ball'],
+        ['instanceOf' => 'RedBall']
+    ]
+]);
+$ballpool = $di->get('Ballpool', [
+    'width' => 5
+]);</code></pre>
+          <h2 id="setter-injection">Setter Injection </h2>
+          <p>
+            Class methods can be configured to be automatically called during object creation.
+            Setter rules are appended rather than overwritten. 
+            This makes it possible to call the same setter multiple times.
+            
+            Injection rules are not inherited from other classes or aliases.
+            They only apply to the class or alias in the rule.
+            
+          </p>
+          <pre><code class="language-php">$di = new DD\DiMaria;
+$di->setInjection('Foo', 'doSomething');
+$di->setInjection('Foo', 'doSomething', ['bar' => true]);
+$foo = $di->get('Foo');</code></pre>
+          <h2 id="custom-values">Custom Values </h2>
+          <p>
+            It is possible to set a value by calling set. This value is retrievable by using 'get'.
+            Any value that is set is inserted into its cache and therefore overrides any existing class
+            or alias.
+            
+            This means DiMaria can operate effectively as a simple key-value store.
+            
+          </p>
+          <pre><code class="language-php">$di = new DD\DiMaria;
+$di->set('name', 'DangerousDan');
+$myName = $di->get('name');
+</code></pre>
+          <p>
+            DiMaria also allows custom factories using setFactory.
+            Internally, DiMaria will create a factory for each class that it inspects, so that it can
+            quickly create another instance of that class.
+            
+            setFactory allows us to set our own callable as a factory, which will be retrievable by calling 'create'.
+                
+          </p>
+          <pre><code class="language-php">$di = new DD\DiMaria;
+$di->setFactory('name', function() use ($di) {
+    $service = $di->get('myService');
+    return $service->getName();
+});
+$myName = $di->get('name');</code></pre>
+          <h1 id="methods">Methods</h1>
+          <h2 id="get">get</h2>
+          <pre><code class="language-php">public function get($class, array $params = [])</code></pre>
+          <div>
+            The get method is used to fetch an instance of a class.     
+            If the class has been fetched before, then it will return a cached instance.<br>If dependencies need to be calculated internally then these will be created usig the <a href="#create">create</a>method.<br>It is possible to override the default cache behaviour by marking the class an not shared with the <a href="#setShared">setShared</a> method
+          </div>
+          <h2 id="create">create</h2>
+          <pre><code class="language-php">public function create(string $class, array $params = [])</code></pre>
+          <div>
+            The get method is used to fetch an instance of a class. 
+            This differs from <a href="#get">get </a> in that it will always return a new instance of a class.
+          </div>
+          <h2 id="has">has</h2>
+          <pre><code class="language-php">public function has($class): bool</code></pre>
+          <div>The has method will return a boolean which represents whether the class passed to it is fetchable.<br>This is determined by checking if the class exists, or whether the value passed matches an existing 
+            alias, preference or cached instance
+          </div>
+          <h2 id="setParams">setParams</h2>
+          <pre><code class="language-php">public function setParams(string $class, array $params): self</code></pre>
+          <div>The setParams allows setting or overriding default parameters on classes.<br>The method returns 
+            $this
+             to allow for a fluent interface 
+          </div>
+          <h2 id="setAlias">setAlias</h2>
+          <pre><code class="language-php">public function setAlias(string $alias, string $class, array $params = []): self;</code></pre>
+          <div>setAlias will create an alias of a class which can later be fetched using the <a href="#get">get</a> or <a href="#create">create</a> methods.<br>The method functions similarly to <a href="#setParams">setParams</a> except we also pass the name of the alias, and the parameters are now optional.<br>Parameters set on the class will be inherited by the alias.
+            Any parameters set on the alias will not affect the original class.
+          </div>
+          <h2 id="setPreference">setPreference</h2>
+          <pre><code class="language-php">public function setPreference(string $alias, string $class): self</code></pre>
+          <div>setPreference allows setting a preferred implementation of a class or interface.<br>If a class parameter is typehinted to a class or interface, it will use the preferred
+            implementation instead.
+          </div>
+          <h2 id="setShared">setShared</h2>
+          <pre><code class="language-php">public function setShared(string $class, bool $isShared = true): self</code></pre>
+          <div>setShared allows you to change the default caching behaviour of the<a href="#get">get</a> or <a href="#create">create</a> methods. By default, get will cache the result, and create will not.<br><br>This is useful for 2 reasons.<br>#1 The get method uses create internally to fetch its dependencies. If one of those dependencies
+            should be shared, then it is possible to do this using this method.<br>#2 DiMaria implements the container-interop ContainerInterface for container interoperabilty.
+            This requires a container has a get and a has method.
+            Setting a class to be not shared allows us to create a new instance each time using the get method, 
+            therefore allowing full interoperabilty.
+          </div>
+          <h2 id="setInjection">setInjection</h2>
+          <pre><code class="language-php">public function setInjection(string $class, string $method, array $params = []): self</code></pre>
+          <div>
+            setInjection allows us to automatically call a method on the object before returning it.
+            Method parameters are passed in an associated array.<br>Injections rules are appended, not overwritten. This allows us to call the same
+            method multiple times.<br>Any Injection rules are not inherited when by aliases of the method.
+          </div>
+          <h2 id="set">set</h2>
+          <pre><code class="language-php">public function set(string $key, $value): self</code></pre>
+          <div>
+            The set method allows you to set any custom values.
+            The values are stored in the cache and retrievable with the get method.
+          </div>
+          <h2 id="setFactory">setFactory</h2>
+          <pre><code class="language-php">public function setFactory(string $key, callable $factory): self</code></pre>
+          <div>The setFactory method allows you to set a custom callable, which is retrievable by the get or create method.<br><i>Note: The get method will also return the result of the callable, but subsequent calls will return the same cached result.</i></div>
+        </div>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="container"></div>
+    </footer>
+  </body>
+</html>
