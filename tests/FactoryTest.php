@@ -59,4 +59,20 @@ class FactoryTest extends AbstractTest
         $this->assertInstanceOf('Sink', $sink1);
         $this->assertEquals('bar', $sink2);
     }
+
+    public function testSetFactoryCanHandleAnInvokableClass()
+    {
+        $this->di->setFactory('Foo', $this->di->get('InvokableClass'));
+        $result = $this->di->create('Foo');
+        $this->assertEquals('foo', $result);
+    }
+
+    public function testSetFactoryCanHandleAnInvokableClassWithParameters()
+    {
+        $this->di->setFactory('Foo', $this->di->get('InvokableClassWithParams'));
+        $result1 = $this->di->create('Foo');
+        $result2 = $this->di->create('Foo', ['foo' => 'bar', 'baz' => 'taz']);
+        $this->assertEquals([], $result1);
+        $this->assertEquals(['foo' => 'bar', 'baz' => 'taz'], $result2);
+    }
 }
