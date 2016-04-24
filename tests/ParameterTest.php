@@ -84,4 +84,34 @@ class ParameterTest extends AbstractTest
 
         $this->assertEquals('AA', $room->tvRemote->batteries);
     }
+
+    public function testParamsCanBeAnArray()
+    {
+        $this->di->setParams(TV::class, [
+            'inches' => [
+                'foo' => 'bar',
+                'baz' => 'bosh'
+            ]
+        ]);
+        $tv = $this->di->get(TV::class);
+        $this->assertEquals('bar', $tv->inches['foo']);
+        $this->assertEquals('bosh', $tv->inches['baz']);
+    }
+
+    public function testInstanceOfInArrayDoesntHaveToBeInTopLevel()
+    {
+        $this->di->setParams(TV::class, [
+            'inches' => [
+                'foo' => [
+                    'bar' => [
+                        'baz' => ['instanceOf' => Sink::class],
+                        'bosh' => true,
+                    ]
+                ]
+            ]
+        ]);
+        $tv = $this->di->get(TV::class);
+        $this->assertInstanceOf(Sink::class, $tv->inches['foo']['bar']['baz']);
+        $this->assertEquals(true, $tv->inches['foo']['bar']['bosh']);
+    }
 }

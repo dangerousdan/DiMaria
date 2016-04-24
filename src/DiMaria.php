@@ -263,16 +263,18 @@ class DiMaria implements ContainerInterface
 
     protected function determineParameter($param, bool $isVariadic): array
     {
-        if (is_array($param)) {
-            if ($isVariadic) {
-                $params = [];
-                foreach ($param as $val) {
-                    $params[] = isset($val['instanceOf']) ? $this->create($val['instanceOf'], $val['params'] ?? []) : $val;
-                }
-                return $params;
-            }
-            return isset($param['instanceOf']) ? [$this->create($param['instanceOf'], $param['params'] ?? [])] : [$param];
+        if (!is_array($param)) {
+            return [$param];
         }
-        return [$param];
+        if (isset($param['instanceOf'])) {
+            return [$this->create($param['instanceOf'], $param['params'] ?? [])];
+        }
+        foreach ($param as $key => $val) {
+            $param[$key] = $this->determineParameter($val, false)[0];
+        }
+        if (!$isVariadic) {
+            return [$param];
+        }
+        return $param;
     }
 }
