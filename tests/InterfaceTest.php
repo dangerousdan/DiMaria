@@ -1,8 +1,8 @@
 <?php
 use DD\DiMaria as DiMaria;
-use Interop\Container\ContainerInterface;
-use Interop\Container\Exception\ContainerException;
-use Interop\Container\Exception\NotFoundException;
+use Psr\Container\ContainerInterface;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 class InterfaceTest extends AbstractTest
 {
@@ -29,25 +29,25 @@ class InterfaceTest extends AbstractTest
 
     public function testNotFoundExceptionIsThrownWhenClassDoesntExist()
     {
-        $this->expectException(NotFoundException::class);
+        $this->expectException(NotFoundExceptionInterface::class);
         $this->di->get('abcdefg');
     }
 
     public function testContainerExceptionIsThrownWhenAttemptingToCreateAnInterface()
     {
-        $this->expectException(ContainerException::class);
+        $this->expectException(ContainerExceptionInterface::class);
         $this->di->get('RoomInterface');
     }
 
     public function testContainerExceptionIsThrownWhenParamsAreIncorrect()
     {
-        $this->expectException(ContainerException::class);
+        $this->expectException(ContainerExceptionInterface::class);
         $this->di->get('TvRemote', ['batteries' => 2, 'buttons' => 'a']);
     }
 
     public function testContainerExceptionIsThrownWhenParamsAreMissing()
     {
-        $this->expectException(ContainerException::class);
+        $this->expectException(ContainerExceptionInterface::class);
         $this->di->get('TvRemote');
     }
 }

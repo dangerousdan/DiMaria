@@ -3,7 +3,7 @@ namespace DD;
 
 use DD\DiMaria\Exception\ContainerException;
 use DD\DiMaria\Exception\NotFoundException;
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 
 /**
  * DiMaria Dependency injector

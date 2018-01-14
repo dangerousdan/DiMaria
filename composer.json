@@ -1,7 +1,7 @@
 {
     "name": "dangerousdan/dimaria",
     "type": "library",
-    "description": "A super fast Dependency Injection Container for PHP 7",
+    "description": "A super fast Dependency Injection Container for PHP 7+",
     "homepage": "https://github.com/dangerousdan/dimaria",
     "keywords": ["Dependency Injection", "Dependency Injection Container", "DI", "DIC"],
     "license": "BSD-2-Clause",
@@ -10,14 +10,14 @@
         "email": "danny@dangerweb.net"
     }],
     "require": {
-        "php": "~7.0",
-        "container-interop/container-interop": "^1.1"
+        "php": "^7",
+        "psr/container": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^5.2"
     },
     "autoload": {
-    	"psr-4": {
+        "psr-4": {
             "DD\\": "src"
         }
     }

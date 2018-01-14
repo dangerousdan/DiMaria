@@ -1,6 +1,6 @@
 <?php
 namespace DD\DiMaria\Exception;
 
-use Interop\Container\Exception\NotFoundException as InteropNotFoundException;
+use Psr\Container\NotFoundExceptionInterface;
 
-class NotFoundException extends \Exception implements InteropNotFoundException {}
+class NotFoundException extends \Exception implements NotFoundExceptionInterface {}

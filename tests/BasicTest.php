@@ -10,7 +10,7 @@ class BasicTest extends AbstractTest
 
     public function testCreateAnObjectWhenTheresNoRulesAndNoParams()
     {
-        $sink = $this->di->get(Sink::class);
+        $sink = $this->getDi()->get(Sink::class);
         $this->assertEquals(Sink::class, get_class($sink));
     }
 
